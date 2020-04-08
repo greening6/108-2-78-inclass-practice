@@ -26,3 +26,111 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+c("aa","bb","cc")
+c(1,25,77)
+```
+### 用c刮起來的東西只能用相同類別
+
+```{r}
+# 10位學生的主系
+majors10_char <- c('經濟學系','社會學系','社會學系','經濟學系','經濟學系','社會學系','經濟學系','經濟學系','經濟學系','社會學系')
+
+typeof(majors10_char)
+class(majors10_char)
+```
+
+```{r}
+majors10_factor <- factor(majors10_char)
+# 或
+majors10_factor <- factor(
+  c('經濟學系','社會學系','社會學系','經濟學系','經濟學系','社會學系','經濟學系','經濟學系','經濟學系','社會學系')
+)
+
+typeof(majors10_factor)
+class(majors10_factor)
+```
+### 把系級換成整數來分別紀錄(integer)
+
+```{r}
+levels(majors10_factor)
+```
+### level要排序的時候不要用自己的符號，因每一台電腦不一樣，所以打經濟學系跟社會學系就好
+
+```{r}
+stringInteger <- c("1","2","-11")
+class(stringInteger) # 無法進行數值運算
+stringInteger+2
+```
+### 字串不能加，數字才可以加，除非一開始輸入的是(1,2,-11)，或者在第三行stringInteger前面加as.numeric(stringInteger)
+
+```{r}
+stringInteger <- c(1,2,-11)
+class(stringInteger) # 無法進行數值運算
+stringInteger+2
+```
+
+```{r}
+studentId <- c(410773002, 410773015)
+as.character(studentId)
+class(studentId)
+```
+
+```{r}
+library(lubridate)
+```
+### 用lubridate來計算時間（訂單誰先進來）進來的時間是跟1970年00:00:00差多久來計算哪筆訂單先進來
+
+### 例如：台北 2020-03-18 13:52:40 是以年月日開頭
+```{r}
+ymd_hms("2020-03-18 13:52:40")
+```
+### 例如：葡萄牙 Mar.18, 2020, 05:52:40 是以月日年開頭，後面的tz是時區
+```{r}
+mdy_hms("Mar.18, 2020, 05:52:40",tz="Europe/Lisbon")
+```
+
+```{r}
+library(lubridate)
+tpeTime <- ymd_hms("2020-03-18 13:52:40",
+        tz="Asia/Taipei")
+```
+
+```{r}
+pgTime <- mdy_hms("Mar.18, 2020, 05:52:40",
+                  tz="Europe/Lisbon")
+```
+
+```{r}
+with_tz(tpeTime, tzone="UTC")
+with_tz(pgTime, tzone="UTC")
+```
+
+```{r}
+ymd_hms("2020-03-04T06:56:29Z")
+```
+### 只要有T跟Z在中間，就不用指定時區，因為他就是UTC了
+### 或者如果你真的要加時區符號，就要在前面再加with_tz()
+
+
+### practice
+### 2020-03-04T08:15:28Z	2020-03-11 16:15:37	2020-03-11 16:47:53
+```{r}
+a<-ymd_hms("2020-03-04T08:15:28Z") #first time
+b<-ymd_hms("2020-03-11 16:15:37",tz="Asia/Taipei") #second time
+c<-ymd_hms("2020-03-11 16:47:53",tz="Asia/Taipei") #third time
+studentTime <- c(a,b,c)
+```
+
+```{r}
+studentTime
+```
+### 另一種方法
+```{r}
+studentTime <- c(ymd_hms("2020-03-04T08:15:28Z"),ymd_hms("2020-03-11 16:15:37",tz="Asia/Taipei"),ymd_hms("2020-03-11 16:47:53",tz="Asia/Taipei"))
+```
+
+```{r}
+studentTime
+```
