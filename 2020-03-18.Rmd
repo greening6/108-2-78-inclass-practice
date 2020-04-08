@@ -26,3 +26,157 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(googlesheets4)
+library(dplyr)
+library(lubridate)
+```
+
+```{r}
+library(readr)
+exDataPost80s <- read_csv("https://www.dropbox.com/s/rc6t40gsxduysz6/exDataPost80s.csv?dl=1")
+View(exDataPost80s)
+
+```
+
+```{r}
+library(readr)
+hypothesisData <- read_csv("https://www.dropbox.com/s/0etoflih5eqc0bc/hypothesisData.csv?dl=1")
+View(hypothesisData)
+
+```
+
+## Create objects
+
+```{r}
+a <- 2
+a = 2 # = 與 <-同義
+```
+
+```{r}
+3 -> b
+```
+
+```{r}
+a+b
+```
+
+```{r}
+my_108_total_credits <- 15
+_108_total_credits <- 15
+108_total_credits <- 15
+_my_108_total_credits <- 15
+my.108.total_credits <- 15
+.108.total_credits <- 15 # 隱藏變數
+.my.108.total_credits <- 15
+我的108學年總學分數 <- 15
+`我的108學年總學分數` <- 15 # 特殊名稱處理，`不是名稱的一部份
+`.108.total_credits` <- 15
+```
+
+## calling an object
+```{r}
+'我的年紀'<-20
+my_age->20
+```
+
+```{r}
+vNum1 <- c(-1,5)
+vNum2 <- c(2,3)
+vNum4 <- c() # 空向量
+```
+
+```{r}
+vNum3 <- c(vNum2, vNum1)
+vNum4 <- c(vNum4, vNum1) # 向量疊代 （recursive vector concatenate）
+```
+
+```{r}
+library(httr)
+library(dplyr)
+GET("https://api.github.com/repos/tpemartin/108-2-56-inclass-practice/commits") %>%
+  content() %>%
+  View()
+```
+
+```{r}
+library(httr)
+library(dplyr)
+GET("https://github.com/greening6/108-2-78-inclass-practice/commits/master") %>%
+  content() %>%
+  View()
+```
+
+Exercise
+```{r}
+library(googlesheets4)
+`出席狀況表單網址` <-  "https://docs.google.com/spreadsheets/d/1oB-5hj1pO5g8FMpZbA7RgIG8NvCRx6WvLPwvleCEV4Q/edit#gid=987577191"# 缺乏定義值
+ss <- as_sheets_id(`出席狀況表單網址`)
+homework_sheet <- sheets_read(ss,sheet=1)
+```
+
+###logical
+```{r}
+logi1 <- c(T,TRUE,F,FALSE,FALSE)
+```
+
+```{r}
+# 加總向量內的所有元素值。
+sum(logi1)
+```
+
+```{r}
+num <- c(1.5, 2, 3)
+int <- c(1L, 3L, -2L)
+char <- c("1.5","2","3")
+logi <- c(T,T,F)
+
+typeof(num)
+typeof(int)
+typeof(char)
+typeof(logi)
+
+library(xm)
+```
+
+```{r}
+library(googlesheets4)
+```
+
+```{r}
+install.packages(c("googlesheets4","tidyverse"))
+```
+
+### R markdown
+object_value->objectname
+
+```{r}
+a <- 2
+```
+
+```{r}
+3 -> b
+```
+
+```{r}
+a+b
+```
+```{r}
+a-b
+```
+```{r}
+my_108_total_credits <- 15
+my108_total_credits <- 15
+my108_total_credits <- 15
+.my_108_total_credits <- 15
+my.108.total_credits <- 15
+my108.total_credits <- 15 # 隱藏變數
+.my.108.total_credits <- 15
+我的108學年總學分數 <- 15
+`我的108學年總學分數` <- 15 # 特殊名稱處理，`不是名稱的一部份
+`.108.total_credits` <- 15
+`我的成績`<- 100
+### 只能用1.英文2.單引號加中文3.一點(dot)之後不接數字 才可以
+### 數值->你的目標名稱
+```
