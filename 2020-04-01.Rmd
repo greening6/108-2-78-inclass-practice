@@ -26,3 +26,225 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+vectorExample <- c(2,6,7)  ###創造出一個vectorExample
+listExample <- list(2,6,7)  ###創造出listExample的environment
+
+
+print(vectorExample)
+print(vectorExample)
+```
+### R給list比vector更多的顯示方式，如果在gobal environment裡面有出現放大鏡的搜尋(list有，vector沒有)，代表他提供更清楚的物件值，按下去會出現三個元素，分別是2,6,7。
+### 除此之外，list還有以下好處，1.每個元素可以是不同type的物件值，例如小明於「2020-03-31T13:40:55Z」在「一芳」買了「2杯」「水果茶」，如果括號內的訊息都想記下來，在過去用vector的話，這幾個值都要把它寫成是字串（因為用vector儲存的話，所有的值都必須是相同的type，又可以同時容納四個可能的值的只有字串），如下 
+```{r}
+c("2020-03-31T13:40:55Z","一芳","2","水果茶") 
+```
+### 而用list的話，他可以依照資料應該有的特質，而直接用那個特質底下的type儲存，例如
+```{r}
+library(lubridate)
+list(ymd_hms("2020-03-31T13:40:55Z"),"一芳",2,"水果茶") 
+```
+### 先把第一個時間轉成電腦懂的date time class，也就是lubridate，然後看第二個一芳，他本來就是字串(character)，不用動，第三個2是數字(numeric)，所以去掉雙引號就好，第四個水果茶，他本來就是字串(character)，不用動。
+
+```{r}
+library(lubridate)
+`小明交易1` <- list(
+  ymd_hms("2020-03-31T13:40:55Z"), # Date/Time class
+  "一芳", # character
+  2, # numeric
+  "水果茶" # character
+)
+print(`小明交易1`)
+```
+
+###list好處2.物件值可以是vector形式，也可以list。
+```{r}
+###用vector
+c(
+  c("108學年第1學期","高級會計學","高等統計學"),###向量1
+  c("108學年第2學期","食在拉丁美洲")###向量2
+)
+```
+###用vector不會因為你把前三個括成向量一，後兩個括成向量二，就把他視為一體（也就是不會剩下向量一二，變成兩個元素），跑完之後他還是會顯示五個元素。
+```{r}
+###用list
+list(
+  c("108學年第1學期","高級會計學","高等統計學"),###向量1
+  c("108學年第2學期","食在拉丁美洲")###向量2
+)
+```
+### 而用list他會依照你分的向量，拆成兩個元素
+
+```{r}
+# list含兩個vectors
+`小明108學年課表A` <- list(
+  c("108-1","高級會計學","高等統計學"),
+  c("108-2","食在拉丁美洲")
+)
+print(`小明108學年課表A`)
+```
+
+```{r}
+# list含兩個lists
+`小明108學年課表B` <- list(
+  list("108-1","高級會計學","高等統計學"),
+  list("108-2","食在拉丁美洲")
+)
+print(`小明108學年課表B`)
+```
+
+```{r}
+# list含兩個lists, 子層list又各含兩個vectors
+`小明108學年課表C` <- list(
+  list(
+    c("108-1"), # 可只寫 "108-1"
+    c("高級會計學","高等統計學")
+       ),
+  list(
+    c("108-2"),
+    c("食在拉丁美洲")
+  )
+)
+print(`小明108學年課表C`)
+```
+
+###list好處3，物件值可以取名
+```{r}
+`小明108學年課表D` <- list(
+  `上學期`=list(
+    semester=c("108-1"), # 可只寫 "108-1"
+    courses=c("高級會計學","高等統計學")
+       ),
+  `下學期`=list(
+    semester=c("108-2"),
+    courses=c("食在拉丁美洲")
+  )
+)
+print(`小明108學年課表D`)
+```
+
+###Example:Github Commit
+```{r}
+commit <- list(
+  author = list(
+    name = c("Martin老師"),
+    email = c("mtlin@gm.ntpu.edu.tw"),
+    date = ymd_hms("2020-03-25T07:17:40Z")
+  ),
+  committer = list(
+    name = c("emilyluckey"),
+    email = c("emily007@gmail.com"),
+    date = ymd_hms("2020-03-26T08:18:40Z")
+  ),
+  message = c("update")
+)
+print(commit)
+```
+###為什麼要學list?因為網路上的資料回傳大部分都長得像list的格式(JSON格式)
+
+###example
+```{r}
+browseURL("https://api.github.com/repos/tpemartin/108-2-56-inclass-practice/commits") 
+```
+
+```{r}
+library(jsonlite)
+toJSON(commit)
+```
+###用toJSON把R轉換成JSON的形式，因為網路語言大多用JSON
+
+###練習時間:學生小明，在108學年第1學期修了Alice老師所授的個體經濟學（得分85分）、Mark老師所授的總體經濟學(得分73分)。在108學年第2學期修了Jason老師所授的作業研究（得分90分）。使用list你會怎麼記錄上面的資訊?
+```{r}
+`小明` <- list(
+  list("108-1",list("Alice","個體經濟學","85"),list("Mark","總體經濟學","73")),
+  list("108-2",list("Jason","作業研究","90")))
+print(小明)
+```
+#Answer:
+```{r}
+# 108-1 
+course1_1081 <- 
+  list(
+    name="個體經濟學",
+    teacher="Alice",
+    grade=85
+  )
+course2_1081 <-
+  list(
+    name="總體經濟學",
+    teacher="Mark",
+    grade=78
+  )
+`108-1修課記錄` <- 
+  list(
+    course1_1081,
+    course2_1081
+  )
+
+# 108-2
+course1_1082 <- 
+  list(
+    name="作業研究",
+    teacher="Jason",
+    grade=90
+  )
+`108-2修課記錄` <- 
+  list(
+    course1_1082
+  )
+
+# 整合兩學期
+`每學期修課記錄` <- list(
+  `108-1`=`108-1修課記錄`,
+  `108-2`=`108-2修課記錄`
+)
+
+# 完成記錄
+`小明的修課記錄` <- 
+  list(
+    name="小明",
+    semesters=`每學期修課記錄`
+  )
+```
+
+
+###練習時間：今（“2020-03-31”）明（“2020-04-01”）「台北市」氣溫最高25度，最低18度；「新北市」氣溫最高24度，最低15度。
+
+```{r}
+today <- list(
+  list("台北市",c(highest_temp = 25),c(lowest_temp = 18)),
+  list("新北市",c(highest_temp = 24),c(lowest_temp = 15)))
+tomorrow <- list(
+  list("台北市",c(highest_temp = 25),c(lowest_temp = 18)),
+  list("新北市",c(highest_temp = 24),c(lowest_temp = 15)))
+
+weather <- list(today,tomorrow)
+
+print(weather)
+```
+
+
+###物件名稱用反頓點``，物件字串值才用""。
+###在下次重新開始時，要把物件重新叫回來的方法：save(列出物件名稱,file="today".Rda)然後會發現右下角工作目錄有today.Rda這樣就存下來了
+```{r}
+save(commit,list,listExample,`小明108學年課表D`,file="today.Rda")
+```
+
+###下次要用的時候直接load(today.Rda)，上次存的就回來了
+```{r}
+load("today.Rda")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
