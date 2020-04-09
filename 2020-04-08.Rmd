@@ -26,3 +26,310 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+#start
+```{r}
+vectorExample <- c("小明","小英","大雄") # 問vectorExample裡面有幾個值？
+
+# 有多少位置可選：
+length(vectorExample) #length會顯現出到底有幾個值
+```
+
+```{r}
+vectorExample[[1]] #代表我要選出第一個位置的值
+vectorExample[[3]] #代表我要選出第三個位置的值
+```
+
+```{R}
+listExample <- 
+  list(
+    student="小明",
+    `學期`=list(
+      `108-1`=list(
+        list(
+          name="個體經濟學",
+          teacher="Alice",
+          grade=85
+        )
+      ),
+      `108-2`=list(
+        list(
+          name="總體經濟學",
+          teacher="Mark",
+          grade=78
+        )
+      )
+    )
+  )
+# 有多少位置可選：
+length(listExample)
+```
+
+```{R}
+listExample[[1]]
+listExample[[2]]
+```
+
+
+###Practice
+```{r}
+library(jsonlite)
+fromJSON("https://data.tainan.gov.tw/dataset/4cd9345a-04bf-4328-a97d-314ff78b4763/resource/afc025fc-1ef4-447c-b785-a680391d0ca1/download/tnsport2.json", simplifyDataFrame = F) -> tainanSportsMap
+
+length(tainanSportsMap)
+```
+
+```{r}
+tainanSportsMap[[1]]
+tainanSportsMap[[1076]]
+```
+
+#用名字選$.
+```{r}
+# 有多少名字可選：
+names(listExample)
+```
+
+```{r}
+listExample$student
+listExample$`學期` #特殊名稱依然要用返頓點
+```
+
+
+```{r}
+str(listExample)
+```
+
+```{r}
+str(listExample$`學期`)
+```
+
+#其實也可以用[["名字"]]來選，只是名字要以字串「值」的方式來寫，也就是要用引號一對"…", 不用反頓點一對`…`。
+```{r}
+listExample[["student"]]
+listExample$student
+
+listExample[["學期"]] # 小心不是反頓點喔。
+listExample$`學期`
+```
+###中括號裡面要放的名稱以字串表示，也就是用兩個雙引號
+###如果不加雙引號就要先定義一個物件名稱student，他的物件值是student
+```{r}
+student <- "student"
+listExample[[student]]
+```
+
+
+```{r}
+fromJSON("http://data.ntpc.gov.tw/api/v1/rest/datastore/382000000A-000157-002",
+         simplifyDataFrame = F) -> newTaipeiCityVaccine
+```
+
+```{r}
+str(newTaipeiCityVaccine)
+length(newTaipeiCityVaccine)
+names(newTaipeiCityVaccine)
+```
+
+#可用位置跟名字取元素
+```{r}
+str(newTaipeiCityVaccine[[1]])#用位置取元素
+str(newTaipeiCityVaccine$success)#用名字取元素
+str(newTaipeiCityVaccine[["success"]])
+
+str(newTaipeiCityVaccine[[2]], max.level = 1) #因為有很多層資料，所以用max level來限制最多顯示幾層
+str(newTaipeiCityVaccine$result, max.level = 1)
+str(newTaipeiCityVaccine[["result"]], max.level = 1)
+```
+
+###多個元素  時間26:36
+```{r}
+vectorExample
+vectorExample[c(1,3)]
+vectorExample[c(3,2,1)]#重新排列效果 #選多個元素時，可以有重新排列的效果
+```
+
+```{r}
+str(listExample, max.level=1)
+
+str(listExample[c(1,2)], max.level=1) #155\157是一樣的結果
+str(listExample[c(2,1)], max.level=1)
+```
+
+```{r}
+str(tainanSportsMap, max.level = 1)
+str(tainanSportsMap[c(1,324,566)], max.level = 1)
+```
+
+
+
+
+#用名字選`[c("name1","name2",.....)]`
+```{r}
+#顯示到第一層
+str(listExample, max.level=1)
+
+listExample[c("學期")]#不建議一個中括號的時候只用一個物件，改成listExample[[c("學期")]]較佳，其中如果只有一個物件，有無c()都沒差。
+listExample[c("學期","student")]
+listExample[c("student","學期")]
+```
+
+
+#practice
+```{r}
+fromJSON("https://www.dropbox.com/s/qnm9bnz7vccrvcz/taipeiNightMarkets.json?dl=1", simplifyDataFrame = F) -> taipeiNightMarkets
+
+length(taipeiNightMarkets)
+str(taipeiNightMarkets[c(2,5,6,13,14)])
+```
+
+#用「要/不要」邏輯向量選[c(T,T,F,...)]
+```{r}
+vectorExample
+vectorExample[c(T,T,F)] # 要，要，不要 #針對每一個元素你跟我講要還是不要
+#T can also be written as TRUE, F can also be written as FALSE. #有幾個元素，就要給幾個要或不要
+```
+
+```{r}
+str(listExample)
+str(listExample[c(F,T)]) #不要，要  #這邊跟str(listExample[c("學期")])會有一樣結果
+str(listExample[c(T,T)]) #要，要
+```
+
+#practice:用「要/不要」邏輯向量自taipeiNightMarkets選出 寧夏觀光夜市，西昌街觀光夜市，大龍街夜市， 雙城街夜市。
+
+#先找出這幾個夜市，用names
+```{r}
+names(taipeiNightMarkets)
+
+c(T,F,F,F,T,F,F,F,F,T,F,F,F,T) -> selectedmarkets
+taipeiNightMarkets[selectedmarkets]
+str(taipeiNightMarkets[c(T,F,F,F,T,F,F,F,F,T,F,F,F,T)], max.level = 1)
+```
+#另一種寫法
+```{r}
+rep(F,14) #repeat FALSE 14次
+
+selectedmarkets <- rep(F,14)
+print(selectedmarkets)
+selectedmarkets[c(1,5,10,14)] <- TRUE #箭頭反指代表取代的動作
+print(selectedmarkets)
+```
+
+```{r}
+str(taipeiNightMarkets[selectedmarkets], max.level = 1)
+```
+
+#取一個元素出來盡量使用兩個中括號而非一個中括號
+```{r}
+str(listExample, max.level = 3)
+```
+
+#以下兩個表面都是選取“學期”:
+```{r}
+get1 <- listExample[["學期"]]
+get2 <- listExample["學期"]
+```
+
+#[[]]: 拿出某個物件值。listExample[["學期"]]將listExample裡的“學期”物件值拿出來。
+```{r}
+get1 <- listExample[["學期"]]# 學期拿出來，有3個元素的list
+str(listExample, max.level = 3)
+str(get1, max.level = 1)
+```
+
+#[]: 留下某個物件值。listExample["學期"]「只留下」listExample裡的“學期”物件值。
+```{r}
+get2 <- listExample["學期"] # listExample 只留下 學期元素，是個只有一個元素的list
+str(get2, max.level = 1)
+
+```
+
+
+###連鎖選取
+```{r}
+numVector <- c(2,3,6,-1,4,2,6)
+select1 <- numVector[c(1,4)]; select1 #此行前段代表從numVector選出第一跟第四個數值，稱它為select1
+#上行等於 select1 <- numVector[c(1,4)] 然後再print(select1)，在R語言裡可用分號隔開每個指令
+select2 <- select1[[1]]; select2 #此行前段代表從select1裡面選出第一個數值
+
+# 前兩個步驟相當於
+numVector[c(1,4)][[1]] #稱為連鎖選取
+```
+
+
+```{r}
+select1 <- numVector[c(T,T,F,T,F,F,T)]; select1
+select2 <- select1[c(1,4)]; select2
+
+# 相當於
+numVector[c(T,T,F,T,F,F,T)][c(1,4)]
+```
+
+#practice
+
+```{r}
+majors <- c("經濟學系","經濟學系","社會學系","社工系","經濟學系")
+names <- c("小英", "小美", "大雄","阿華", "阿尼")
+gender <- c("F","F","M","F","M")
+```
+#創造出只要“經濟學系”學生的邏輯向量，econOnly。
+#選出econOnly的names與gender。
+#在econOnly的gender下創造出只要“F”的邏輯向量, econFemaleOnly。
+#選出names中為“經濟學系”且“F”的姓名。
+
+```{r}
+econOnly <- majors[c(1,2,5)]
+print(econOnly)
+```
+
+```{r}
+a <- names[c(1,2,5)]
+b <- gender[c(1,2,5)]
+print(a)
+print(b)
+```
+
+```{r}
+econFemaleOnly <- gender[c(1,2,5)][c(1,2)]
+print(econFemaleOnly)
+```
+
+```{r}
+names[c(1,2)]
+print(names[c(1,2)])
+```
+
+
+
+#practice
+#在前面討論使用$及[ ]取一個元素時我們創造了get1與get2兩個物件，請分別由get1, get2取出108-1學期個體經濟學教師姓名。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
