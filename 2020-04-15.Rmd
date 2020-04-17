@@ -26,3 +26,510 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+###list 元素選取
+在前面討論使用$及[ ]取一個元素時我們創造了get1與get2兩個物件，請分別由get1, get2取出108-1學期個體經濟學教師姓名。
+```{r}
+listExample <- 
+  list(
+    student="小明",
+    `學期`=list(
+      `108-1`=list(
+        list(
+          name="個體經濟學",
+          teacher="Alice",
+          grade=85
+        )
+      ),
+      `108-2`=list(
+        list(
+          name="總體經濟學",
+          teacher="Mark",
+          grade=78
+        )
+      )
+    )
+  )
+```
+#顯示listExample裡面有什麼
+```{r}
+str(listExample)
+```
+
+```{r}
+listExample[[1]]
+listExample[[2]]
+```
+#listExample第一層只能選取兩個元素，也就是只能選出1或2，在第一行的結果list of 2就告訴我們只有兩個元素了
+
+#用名字把元素取出來，一個用雙括號一個用單括號，表面上都是選出學期，實際上意思不同
+```{r}
+get1 <- listExample[["學期"]]#兩個中括號選取一個元素代表拿出來的概念
+get2 <- listExample["學期"] #一個中括號選取元素代表只留下的概念
+```
+#用str來看他們有什麼不一樣
+```{r}
+str(get1)
+str(get2)
+```
+
+題目：請分別由get1, get2取出108-1學期個體經濟學教師姓名。
+#get1一層一層撥開來看
+```{r}
+get1_layer1 <- get1[['108-1']]
+str(get1_layer1)
+
+get1_layer2 <- get1_layer1[[1]]
+str(get1_layer2)
+
+get1_layer3_teacher <- get1_layer2[[2]]
+str(get1_layer3_teacher)
+```
+
+#get1連鎖來看
+```{R}
+get1_teacher <- get1[['108-1']][[1]][[2]]
+str(get1_teacher)
+```
+
+#get2一層一層剝開來看
+```{r}
+get2_layer1 <- get2[[1]]
+str(get2_layer1)
+
+get2_layer2 <- get2_layer1[[1]]
+str(get2_layer2)
+
+get2_layer3 <- get2_layer2[[1]]
+str(get2_layer3)
+
+get2_layer4 <- get2_layer3[[2]]
+str(get2_layer4)
+```
+
+#get2連鎖來看
+```{R}
+get2_teacher <- get2[[1]][[1]][[1]][[2]]
+str(get2_teacher)
+```
+
+```{r}
+today <- list(
+  list("台北市",c(highest_temp = 25),c(lowest_temp = 18)),
+  list("新北市",c(highest_temp = 24),c(lowest_temp = 15)))
+tomorrow <- list(
+  list("台北市",c(highest_temp = 25),c(lowest_temp = 18)),
+  list("新北市",c(highest_temp = 24),c(lowest_temp = 15)))
+
+weather <- list(today,tomorrow)
+
+print(weather)
+```
+
+
+```{r}
+today_taipei_temp <- today[[1]][[2]]
+str(today_taipei_temp)
+```
+
+```{r}
+dialogue <- c('小明說："明天不用上課。"',
+               '小花說："真的嗎？"')
+
+dialogue
+
+cat(dialogue, sep="\n")
+
+today_taipei_temp
+weather
+cat(today_taipei_temp)
+```
+
+
+```{r}
+# 10位學生的主系
+majors10_char <- c('經濟學系','社會學系','社會學系','經濟學系','經濟學系','社會學系','經濟學系','經濟學系','經濟學系','社會學系')
+
+typeof(majors10_char)
+class(majors10_char)
+```
+
+```{r}
+majors10_factor <- factor(majors10_char)
+# 或
+majors10_factor <- factor(
+  c('經濟學系','社會學系','社會學系','經濟學系','經濟學系','社會學系','經濟學系','經濟學系','經濟學系','社會學系')
+)
+
+typeof(majors10_factor)
+class(majors10_factor)
+```
+
+```{r}
+majors10_char
+majors10_factor
+```
+```{r}
+as.integer(majors10_factor) 
+```
+```{r}
+levels(majors10_factor)
+```
+
+```{r}
+stringInteger <- c("1","2","-11")
+class(stringInteger) # 無法進行數值運算
+stringInteger+2
+```
+```{r}
+trueInteger <- as.integer(stringInteger)
+class(trueInteger) # 可以進行數值運算
+typeof(trueInteger)
+trueInteger+2
+```
+
+```{r}
+as.integer(stringInteger)
+class(stringInteger)
+stringInteger <- as.integer(stringInteger)
+class(stringInteger)
+```
+```{r}
+studentId <- c("410773002", "410773015")
+class(studentId)
+```
+```{r}
+library(lubridate)
+```
+
+```{r}
+tpeTime <- c("2020-03-18 13:52:40","2020-03-11 03:12:40")
+tpeTime <- ymd_hms(tpeTime,tz="Asia/Taipei")
+```
+
+```{r}
+pgTime <- mdy_hms("Mar.18, 2020, 05:52:40",tz="Europe/Lisbon")
+```
+
+
+```{r}
+with_tz(tpeTime, tzone="UTC")
+with_tz(pgTime, tzone="UTC")
+```
+```{r}
+with_tz(tpeTime, tzone="Europe/Paris")
+with_tz(pgTime, tzone="Europe/Paris")
+```
+```{R}
+class(tpeTime)
+typeof(tpeTime)
+
+as.numeric(tpeTime)
+as.numeric(pgTime)
+```
+
+```{r}
+ymd_hms(tpeTime, tz="UTC")
+mdy_hms(pgTime, tz="UTC")
+```
+
+
+屬於Date/Time class的向量內容是數值，所以它是可以做數值相減。請問台北“2020-03-11 12:55:30”與巴黎“2020-02-13 15:33:10”相減後會出現什麼？
+```{r}
+tpetime <- ymd_hms("2020-03-11 12:55:30",t)
+```
+
+```{r}
+library(lubridate)
+`小明交易1` <- list(
+  ymd_hms("2020-03-31T13:40:55Z"), # Date/Time class
+  "一芳", # character
+  2, # numeric
+  "水果茶" # character
+)
+print(`小明交易1`)
+str(`小明交易1`)
+```
+
+```{r}
+# list含兩個vectors
+`小明108學年課表A` <- list(
+  c("108-1","高級會計學","高等統計學"),
+  c("108-2","食在拉丁美洲")
+)
+print(`小明108學年課表A`)
+str(`小明108學年課表A`)
+```
+
+```{r}
+# list含兩個vectors
+`小明108學年課表B` <- list(
+  list("108-1","高級會計學","高等統計學"),
+  list("108-2","食在拉丁美洲")
+)
+print(`小明108學年課表B`)
+str(`小明108學年課表B`)
+```
+
+```{r}
+library(lubridate)
+Github <- list(`author`=list(`name`=c("Martin老師"),`email`=c("mtlin@gm.ntpu.edu.tw"),`date`=ymd_hms("2020-03-25T07:17:40z")),`commiter`=list(`name`=c("emilyluckey"),`email`=c("emily007@gmail.com"),`message`=c("update")))
+
+str(Github)
+```
+```{r}
+library(jsonlite) # 不少同學這行會有Error，還記得如何排除嗎？
+toJSON(commit)
+```
+
+```{r}
+`小明修課情況` <- list("小明",`108學年第1學期`=list(list(`teacher`=c("Alice老師"),`course`=c("個體經濟學"),`score`=85),list(`teacher`=c("Mark老師"),`course`=c("總體經濟學"),`score`=73),`108學年度第2學期`=list(list(`teacher`=c("Jason老師"),`course`=c("作業研究"),`score`=90))))
+
+str(`小明修課情況`)
+```
+
+```{r}
+`小明的修課記錄` <- 
+  list(
+    name="小明",
+    semesters=
+      list(
+        `108-1`=
+          list(
+            year=108,
+            semester=1,
+            courses=
+              list(
+                list(
+                  name="個體經濟學",
+                  teacher="Alice",
+                  grade=85
+                ),
+                list(
+                  name="總體經濟學",
+                  teacher="Mark",
+                  grade=78
+                )
+              )
+            ),
+        `108-2`=
+          list(
+            year=108,
+            semester=2,
+            courses=
+              list(
+                list(
+                  name="作業研究",
+                  teacher="Jason",
+                  grade=90
+                )
+              )
+            )
+      ) 
+    )
+str(`小明的修課記錄`)
+```
+
+```{r}
+weather <- list(`today`=list(`Taipei`=list(`high_temp`=25,`low_temp`=18),`NewTaipei`=list(`high_temp`=24,`low_temp`=15)),`tomorrow`=list(`Taipei`=list(`high_temp`=25,`low_temp`=18),`NewTaipei`=list(`high_temp`=24,`low_temp`=15)))
+
+str(weather)
+```
+```{r}
+with_tz(tpeTime, tzone="UTC")
+with_tz(pgTime, tzone="UTC")
+```
+
+#新增/刪除/替換R的元素
+元素提取[.],[[.]],$.也可用來進行元素「值」的修改與新增, 使用方法為：
+obj[.] <- value  #把要指定的新value指向我提出來的那個位置，這樣我提出來的直就會被替換掉
+obj[[.]] <- value
+obj$. <- value
+
+若.所指定的元素不存在，則為「新增」。
+若.所指定的元素存在，則為「修改」。
+#在vector上新增/刪除/替換R的元素
+```{r}
+a <- c("1","b","TRUE")
+a
+a[[2]] <- "c" # 元素存在: 替換
+a[[4]] <- "7" # 元素不存在： 增加
+a[c(5,6)] <- c("J", "K")
+a
+```
+
+#practice
+在a裡增加一個“Johnson”使用[[.]]<-。
+使用前一章的向量疊代(recursive vector concatenate)法，新增一個“Mary”。
+```{r}
+a[[7]] <- c("Johnson")
+#回憶recursive vector concatenate: a <- c(a,...)  一個向量，他由他自己的向量跟某個東西堆疊
+a <- c(a,c("Mary"))
+```
+
+#在list上新增/刪除/替換R的元素
+```{r}
+library(lubridate)
+list1 <- 
+  list(
+    list(
+      name="Jack",
+      birthday=ymd("1998-03-21"),
+      status=c(height=177, weight=80)
+    )
+  )
+
+str(list1)
+```
+
+```{R}
+# 更改日期
+list1[[1]]$birthday <- ymd("1997-03-21")
+str(list1)
+
+# 新增資料
+#目前第一層只有一個元素，我要在第一層新增第二個元素
+list1[[2]] <- list(
+  name="Mary",
+  birthday=ymd("1998-08-24")
+)
+
+str(list1)
+```
+
+#practice:
+替Mary依Jack的記錄方式增加身高163，體重45。
+將Jack的身高改成176。
+```{r}
+list1[[2]][[3]] <- list(status=c(height=163,weight=45))
+#or
+list1[[2]]$status <- c(height=163, weight=45)
+str(list1)
+
+list1[[1]][[3]] <- c(height=176,weight=80)
+str(list1)
+```
+
+使用[.] <-
+由於[.]會保留母層結構，所以<-右側要使用和母層相同的型態設定：
+母層若為list，則需用list(...)方式增加。
+母層若為atomic vector，則用c(...)方式增加。
+```{r}
+list1[[1]][["age"]] <- 21
+list1[[2]]["age"] <- list(21)
+
+# 改變「一個」時，使用[[ ]]比較不會錯。
+str(list1)
+```
+
+#想要一次增加兩個元素
+```{r}
+list1[[1]][c("bloodType","registered")] <- list("AB",TRUE)
+#小心！一個中括號的時候要去看母層的結構是list還是vector
+
+str(list1)
+```
+
+#practice
+由 ListExample範例，進行以下任務：
+108-1新增一個“產業經濟學”。
+產業經濟學，同時加上教師Wen及成績88。
+```{r}
+listExample <- 
+  list(
+    student="小明",
+    `學期`=list(
+      `108-1`=list(
+        list(
+          name="個體經濟學",
+          teacher="Alice",
+          grade=85
+        )
+      ),
+      `108-2`=list(
+        list(
+          name="總體經濟學",
+          teacher="Mark",
+          grade=78
+        )
+      )
+    )
+  )
+str(listExample)
+listExample[[2]][[1]][[2]] <- list(name="產業經濟學")
+str(listExample)
+listExample[[2]][[1]][[2]] <- list(name="產業經濟學",teacher="Wen",grade=88)
+str(listExample)
+# 有多少位置可選：
+length(listExample)
+```
+
+刪除可以使用[- c(數字位置)]
+只能「一個」中括號（[[.]]不能接受負數值）
+只能用負數值，不能用元素名稱。
+```{r}
+print(a)
+a[-c(1,3)]
+a[c(-2)] #沒有回存的情況下刪掉第二個
+
+print(a)
+a[-c(1,3)] -> a # 要回存才算真的刪除
+```
+
+#practice:
+自先前List1範例
+刪除Jack的status.
+刪除Mary的status, blookType.
+```{r}
+library(lubridate)
+list1 <- 
+  list(
+    list(
+      name="Jack",
+      birthday=ymd("1998-03-21"),
+      status=c(height=177, weight=80)
+    ),
+    list(
+      name="Mary",
+      birthday=ymd("1998-08-24"),
+      status=c(height=163, weight=45),
+      age=21,
+      bloodType="AB"
+    )
+  )
+
+#刪除Jack的status.
+list1[[1]][-c(3)] -> list1[[1]] #因為我是在第一個元素作修改，所以要存回去list[[1]]，而非list1
+str(list1)
+#刪除Mary的status, blookType.
+list1[[2]][-c(3,5)] -> list1[[2]]
+str(list1)
+```
+
+list元素要刪除時也可以用[.]<-NULL, [[.]]<-NULL, $.<-NULL
+```{r}
+str(list1)
+list1[[2]][c(1,2)] <- NULL
+str(list1)
+#這個方法就不用回存到自己，他自己就會存好了
+```
+
+#practice
+以下資料來自 新北市公共自行車租賃系統(YouBike)
+請自行對它做內容更動練習。
+```{r}
+library(jsonlite)
+fromJSON("https://data.ntpc.gov.tw/od/data/api/54DDDC93-589C-4858-9C95-18B2046CC1FC?$format=json", simplifyDataFrame = F) -> newTaipeiYouBike
+
+#刪除汐止區公所
+#方法一
+newTaipeiYouBike[[3]][-2] -> newTaipeiYouBike[[3]]
+str(newTaipeiYouBike)
+#方法二
+newTaipeiYouBike[[3]][2] <- NULL
+str(newTaipeiYouBike)
+```
+
+
+
+
