@@ -530,6 +530,371 @@ newTaipeiYouBike[[3]][2] <- NULL
 str(newTaipeiYouBike)
 ```
 
+```{r}
+vectorExample <- c("小明","小英","大雄")
+
+# 有多少位置可選：
+length(vectorExample)
+
+vectorExample[[1]]
+vectorExample[[3]]
+```
+
+
+```{r}
+listExample <- 
+  list(
+    student="小明",
+    `學期`=list(
+      `108-1`=list(
+        list(
+          name="個體經濟學",
+          teacher="Alice",
+          grade=85
+        )
+      ),
+      `108-2`=list(
+        list(
+          name="總體經濟學",
+          teacher="Mark",
+          grade=78
+        )
+      )
+    )
+  )
+str(listExample)
+
+listExample[[1]]
+listExample[[2]]
+
+str(listExample[[2]])
+# 有多少位置可選：
+length(listExample)
+```
+
+```{r}
+  `.台北市預報元素值` <- 
+  list(
+    city="台北市",
+    high=25,
+    low=18
+  )
+`.新北市預報元素值` <- 
+  list(
+    city="新北市",
+    high=24,
+    low=15
+  )
+
+library(lubridate)
+`今明天氣` <-
+  list(
+    `今天日期`=ymd("2020-03-31"),
+    `明天天氣`=ymd("2020-04-01"),
+    `各地預報`=list(
+      `.台北市預報元素值`,
+      `.新北市預報元素值`
+      )
+
+  )
+str(`今明天氣`)
+`今明天氣`[[1]]
+`今明天氣`[[3]]
+```
+
+```{R}
+# 有多少名字可選：
+str(listExample)
+names(listExample)
+```
+
+
+```{r}
+listExample$student
+listExample$`學期` # 特殊命名依然要用反頓點呼叫
+```
+
+```{r}
+listExample[["student"]]
+listExample$student
+
+listExample[["學期"]] # 小心不是反頓點喔。
+listExample$`學期`
+```
+
+```{r}
+vectorExample
+vectorExample[c(1,3)]
+```
+
+```{r}
+# 顯示到第一層
+str(listExample, max.level=1)
+
+listExample[c(1,2)]
+```
+
+```{r}
+# 顯示到第一層
+str(listExample, max.level=1)
+
+listExample[c("學期")]
+listExample[c("student","學期")]
+```
+
+```{r}
+vectorExample
+vectorExample[c(T,T,F)] # 要，要，不要
+```
+
+```{r}
+str(listExample)
+str(listExample[c(F,T)]) # 不要，要
+str(listExample[c(T,T)]) # 要，要
+listExample[c(F,T)]
+```
+
+```{r}
+get1 <- listExample[["學期"]]
+get2 <- listExample["學期"]
+str(get1)
+str(get2)
+```
+
+```{r}
+numVector <- c(2,3,6,-1,4,2,6)
+select1 <- numVector[c(1,4)]; select1
+select2 <- select1[[1]]; select2
+
+# 相當於
+numVector[c(1,4)][[1]]
+```
+
+```{r}
+select1 <- numVector[c(T,T,F,T,F,F,T)]; select1
+select2 <- select1[c(1,4)]; select2
+
+# 相當於
+numVector[c(T,T,F,T,F,F,T)][c(1,4)]
+```
+
+
+創造出只要“經濟學系”學生的邏輯向量，econOnly。邏輯向量就是T,F
+選出econOnly的names與gender。
+在econOnly的gender下創造出只要“F”的邏輯向量, econFemaleOnly。
+選出names中為“經濟學系”且“F”的姓名。
+```{r}
+majors <- c("經濟學系","經濟學系","社會學系","社工系","經濟學系")
+names <- c("小英", "小美", "大雄","阿華", "阿尼")
+gender <- c("F","F","M","F","M")
+```
+
+```{r}
+econOnly <- majors[c(T,T,F,F,T)]
+
+econOnly_names <- names[c(T,T,F,F,T)]
+econOnly_gender <- gender[c(T,T,F,F,T)]
+
+econFemaleOnly <- gender[c(1,2,5)][c(1,2)]
+
+names[c(T,T,F,F,T)][c(1,2)]
+```
+
+```{r}
+econOnly<-majors[c(T,T,F,F,T)];econOnly
+econOnly_names<-names[c(T,T,F,F,T)];econOnly_names
+econOnly_gender<-gender[c(T,T,F,F,T)];econOnly_gender
+econFemaleOnly<-econOnly_gender[c(1,2)];econFemaleOnly
+econFemaleOnly_names<-names[c(T,T,F,F,T)][c(1,2)];econFemaleOnly_names
+```
+
+在前面討論使用$及[ ]取一個元素時我們創造了get1與get2兩個物件，請分別由get1, get2取出108-1學期個體經濟學教師姓名。
+```{r}
+get1 <- listExample[["學期"]]
+str(get1)
+get1[[1]][[1]][[2]]
+
+get2 <- listExample["學期"]
+str(get2)
+get2[[1]][[1]][[1]][[2]]
+```
+
+```{r}
+today <- list(
+  list("台北市",highest_temp = 25,lowest_temp = 18),
+  list("新北市",highest_temp = 24,lowest_temp = 15))
+tomorrow <- list(
+  list("台北市",highest_temp = 25,lowest_temp = 18),
+  list("新北市",highest_temp = 24,lowest_temp = 15))
+
+weather <- list(today,tomorrow)
+
+str(weather)
+
+weather[[1]][[2]][[2]] # 今天/新北市/highest_temp
+weather[[2]][[2]][[2]] # 明天/新北市/highest_temp
+
+weather[[1]][[2]]$highest_temp # 今天/新北市/highest_temp
+weather[[2]][[2]]$highest_temp # 明天/新北市/highest_temp
+```
+
+```{r}
+a <- c("1","b","TRUE")
+a
+a[[2]] <- "c" # 元素存在: 替換
+a[[2]]
+a[[4]] <- "7" # 元素不存在： 增加
+a
+a[c(5,6)] <- c("J", "K")
+a
+```
+
+增加一個“Johnson”使用[[.]]<-。
+使用前一章的向量疊代(recursive vector concatenate)法，新增一個“Mary”。
+```{r}
+a[[7]] <- "Johnson"
+
+c(a,"Mary")
+```
+
+```{r}
+library(lubridate)
+list1 <- 
+  list(
+    list(
+      name="Jack",
+      birthday=ymd("1998-03-21"),
+      status=c(height=177, weight=80)
+    )
+  )
+
+str(list1)
+```
+
+```{r}
+# 更改日期
+list1[[1]]$birthday <- ymd("1997-03-21")
+
+# 新增資料
+list1[[2]] <- list(
+  name="Mary",
+  birthday=ymd("1998-08-24")
+)
+
+str(list1)
+```
+
+替Mary依Jack的記錄方式增加身高163，體重45。
+將Jack的身高改成176。
+
+```{r}
+list1[[2]]$status <- c(height=163,weight=45)
+str(list1)
+
+list1[[1]]$status <- c(height=176,weight=80)
+str(list1)
+```
+
+```{r}
+list1[[1]][["age"]] <- 21
+list1[[2]]["age"] <- list(21)
+
+# 改變「一個」時，使用[[ ]]比較不會錯。
+str(list1)
+```
+
+```{r}
+list1[[1]][c("bloodType","registered")] <- list("AB",TRUE)
+
+str(list1)
+```
+
+```{r}
+listExample <- 
+  list(
+    student="小明",
+    `學期`=list(
+      `108-1`=list(
+        list(
+          name="個體經濟學",
+          teacher="Alice",
+          grade=85
+        )
+      ),
+      `108-2`=list(
+        list(
+          name="總體經濟學",
+          teacher="Mark",
+          grade=78
+        )
+      )
+    )
+  )
+
+str(listExample)
+```
+
+進行以下任務：
+108-1新增一個“產業經濟學”。
+產業經濟學，同時加上教師Wen及成績88。
+```{r}
+listExample[[2]][[1]][[2]] <- list(name=c("產業經濟學"))
+str(listExample)
+
+listExample[[2]][[1]][[2]][c("teacher","grade")] <- list("Wen",88)
+str(listExample)
+```
+
+```{r}
+print(a)
+a[-c(1,3)]
+a[c(-2)]
+
+print(a)
+a[-c(1,3)] -> a # 要回存才算真的刪除
+```
+
+刪除Jack的status.
+刪除Mary的status, blookType.
+```{r}
+library(lubridate)
+list1 <- 
+  list(
+    list(
+      name="Jack",
+      birthday=ymd("1998-03-21"),
+      status=c(height=177, weight=80)
+    ),
+    list(
+      name="Mary",
+      birthday=ymd("1998-08-24"),
+      status=c(height=163, weight=45),
+      age=21,
+      bloodType="AB"
+    )
+  )
+str(list1)
+```
+
+```{r}
+list1[[1]][-c(3)] -> list1[[1]]
+str(list1)
+
+list1[[2]][-c(3,5)] -> list1[[2]]
+str(list1)
+```
+
+```{r}
+str(list1)
+list1[[2]][c(1,2)] <- NULL
+str(list1)
+```
+
+
+
+
+
+
 
 
 
