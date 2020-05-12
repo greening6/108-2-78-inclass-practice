@@ -26,3 +26,485 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+4.5 On logical class
+邏輯向量間（即「要/不要」向量）的操作主要是以下幾個：
+&: AND
+|: OR
+```{r}
+example <- list(
+  name=c("小明","小花","小新","美美"),
+  height=c(175,166,170,160),
+  weight=c(77,NA,60,43),
+  birthday=lubridate::ymd(c("1998-03-11","1999-12-22","1995-08-22","2001-10-10")),
+  hobby=c("美食 旅遊","旅遊 時尚","3C 美食","音樂 旅遊"),
+  residence=c("Taipei","New Taipei","Taichung","Kaohsiung"),
+  allowance=factor(c("0-1000","1001-2000","2000+","1001-2000")),
+  bloodType=c("A","B","B","O")
+)
+```
+
+```{r}
+str(example)
+pick_above170 <- example$height >= 170
+pick_bloodB <- example$bloodType == "B"
+pick_loveFood <- 
+  stringr::str_detect(example$hobby,"美食")
+pick_na <- is.na(example$weight)
+pick_after98 <- 
+  example$birthday >= lubridate::ymd("1998-01-01")
+set_TaipeiMetro <- c("Taipei","New Taipei")
+pick_fromTaipeiMetro <- 
+  example$residence %in% set_TaipeiMetro
+```
+
+誰喜歡美食且血型為B型
+```{r}
+str(example[c("name","hobby","bloodType")])
+
+example$name[
+    pick_loveFood & pick_bloodB
+  ]
+```
+
+誰1998以後（含）出生或不住大台北  (否定用法是在前面加驚嘆號)
+```{r}
+example[c("name","birthday","residence")]
+
+example$name[
+  pick_after98 | !pick_fromTaipeiMetro
+]
+```
+
+誰1998以後（含）出生且住大台北且血型B型
+```{r}
+example$name[
+  pick_after98 & pick_fromTaipeiMetro & pick_bloodB
+]
+```
+
+以上邏輯向量間的運算結果還是邏輯向量——依然是「要/不要」向量，所以還是可以用來取出元素。但有時我們要做的運算是希望得到一個T/F元素值，而非一串元素值，如：
+是不是所有的人都來自大台北？
+有任何人喜歡美食嗎？
+以上邏輯值只有一個
+這種運算我們留到流程控制時再講。
+
+
+
+4.6 On character class
+這節使用stringr套件，同時也有一小部份用到glue套件，請先下載安裝。
+```{r}
+library(stringr)
+library(glue)
+```
+
+對character vector每個元素進行部份資訊粹取：
+學號“410873002”，其中108是入學年，73是學系碼。 對100學年以後學生學系碼是固定在「第5、6位元」。
+```{r}
+str_sub("410873002", 5, 6)
+```
+
+```{r}
+str_sub(c("410575123","410583032"),5,6)
+```
+位元固定時可用以上操作
+
+但是很多時候要進行的操作是不固定位置的，譬如說
+地址幾號: “大學號151號”，只知道號碼在「號」這字前面，但它會是第幾個位元不知道。
+因此只能使用Regular Expression (regex, 正規表示式)，才能把號數取出來。
+
+如何讀入“民國108年12月5日”、“民國98年10月5日”?
+```{r}
+lubridate::ymd(
+  c("民國108年12月5日","民國98年10月5日")
+)
+```
+會發現我們無法將民國年用lubridate轉成西元年
+
+lubridate對年只有西元年的概念。
+要能想辦法把上面的“108”,“98”取出加上1911。
+
+lubridate裡的字串日期時間判斷採取的策略是「忽略非數字文字」只以「數字組合」（還允許各地習慣使用的文字，如March, Mar都是3月的意思）判斷時間，所以以下幾個都可以產生「西元」“2019-12-05”:
+```{r}
+lubridate::ymd(
+  c(
+    "民國2019年12月05日",
+    "馬丁2019的12課05muydifícil",
+    "助教2019Emily12解說05真棒",
+    "2019R12課程05すごい",
+    "R程式2019的12期中考05とても変態"
+  )
+)
+```
+然而即使忽略非數字文字，三個數字的組合誰是年？月？日？依然受每個國家日期書寫習慣影響，所以有時還是可能會有誤判。
+
+
+
+4.6.1 Regular expression(regex)
+請自RStudio Cheatsheets下載「Work with Strings Cheatsheet」pdf檔
+
+一種廣義描述所要字串規律的表示法，分成兩部份：
+
+*target pattern: 指對取出字串的描述。如“108”,“98”是我們想取出的字串。我們可以說目標是，
+「0-9的字元2-3個」: [:digit:]{2,3}或[0-9]{2,3}
+ 以上代表：年是0到9的字元且可能是兩三個(2或3位數)0到9的數字排成的
+ 
+*target location description:用固定規格描述“前後”是什麼東西
+指target位置的情境描述。如“民國108年”,“民國98年”，我們可以說，
+target前面是「民國」後面是「年」: (?<=民國)target_pattern(?=年)
+
+*合成regex：(?<=民國)[0-9]{2,3}(?=年)
+
+```{r}
+str_extract_all(
+  c("民國108年12月5日","民國98年10月5日"),
+  "(?<=民國)[0-9]{2,3}(?=年)"
+) # 回傳list 
+
+str_extract(
+  c("民國108年12月5日","民國98年10月5日"),
+  "(?<=民國)[0-9]{2,3}(?=年)"
+) # 回傳vector 
+
+#以兩個回傳的資料形式不一樣，strings的function如果裡面有加all，則回傳的形式會是list，若沒有加all則回傳的形式會是vector
+```
+
+
+4.6.2 組合alternate
+regex介紹：要組合出你要描述的target可能的pattern
+參見RStudio stringr cheat sheet:
+
+所有可能的pattern就像一台吃角子老虎機，它能夠包含你要的所有可能target出象。
+吃角子老虎由數條reel strip組成，每一條strip可以有以下幾種設計
+所以要先定義好有幾條strip要用，每一條strip定義好之後，就可以像吃角子老虎機一樣，排列出所有的可能
+
+*固定字元/組：單寫一個字組或字元，表示那個strip固定不動只有一個出象，例如：2表示只有“2”一個出象，櫻桃只有“櫻桃”一個出象。
+```{r}
+heartSutra <- c("舍利子，色不異空，空不異色；色即是空，空即是色。")
+str_view_all(heartSutra,"色") # 檢視 ＃可以看到你所給的條件有哪幾個位置符合
+str_count(heartSutra,"色") # 計數 ＃數有幾個位置符合你給的條件
+
+str_view_all(heartSutra,"異色")
+```
+
+*字「群」組合(..|..|..): strip上的出象會出現一組字時用，如“(AB|ab)”, 可以產生“AB”或“ab”兩種出象。
+字群組合規則若很單純前後沒有接其他描述則( )可不寫
+```{r}
+studentIds <- c("410873029","410773005","410772035","410562123")
+# 取出學號中的入學屆為107或108
+str_view_all(studentIds,"(107|108)")
+
+str_view_all(studentIds, "107|108") # 不複雜的話可不寫()
+
+# 是否來自107或108學屆
+str_detect(studentIds, "107|108")
+#用detect會得到T F向量
+```
+
+*字「元」組合[]: strip上的出象「均」是一個字「元」時用，如[af78]可以產生“a”,“f”,“7”,“8”四種字元出象。
+幾種常見的字元模版：[0-9](或[:digit:])，[a-z](或[:lower:])，[A-Z](或[:upper:]),[0-9a-zA-Z](或[:alnum:])
+```{r}
+Ids <- c("A283743192","B829103720","A10920402","C291022384")
+
+str_view_all(Ids, "[AC]")
+str_detect(Ids, "[AC]") # 偵測 出現A、C
+
+str_extract(Ids,"[A-Z]") # 取出 A-Z的字元
+```
+
+*將設定好的reel strips依你要的順序排好就是你的regex slot machine, 它可以用來驗證字串裡頭是否出現來自你regex slot machine的某些組合。
+```{r}
+strip1 <- "[0-9]"
+strip2 <- "(櫻桃|777|紅心)" # 字群組合strip因為等下放中間所以用()括起來
+strip3 <- "[A-Z]"
+myRegexSlotMachine <- paste0(strip1,strip2,strip3)
+print(myRegexSlotMachine)
+```
+以下所講的這些有哪些是真的來自上方描述的myRegexSlotMachine呢？
+```{r}
+claimA <- "我得到A檸檬99"
+claimB <- "我的是7777Z"
+claimC <- "我玩了兩次，一次是7蘋果H，另一次是5紅心J"
+# 顯示吻合的出象
+str_view(
+  c(claimA,claimB,claimC),
+  pattern=myRegexSlotMachine
+)
+# 是否有吻合的出象
+str_detect(
+  c(claimA,claimB,claimC),
+  pattern=myRegexSlotMachine
+)
+```
+
+以否定法定義的字「元」組合[^ ]: “[^趙錢孫李]”不能有趙錢孫李任何一個，只會選沒有趙錢孫李的
+
+example
+```{r}
+headline <- "資科系的謝陳官乃飛鳶書院三大名師，其中謝無雙的策略運算，陳大器的數理資科學，及官求敗的運算成本更是打通演算思維任督二脈的三大好課。書院目前有陳一、陳二、陳三四這三名學生。"
+```
+
+```{r}
+# 顯示所有符合規則的
+str_view_all(headline, "謝陳官") # 固定字組
+str_count(headline,"謝陳官")
+
+str_view_all(headline, "[謝陳官]") # 有1個strip: 出象有3個可能字元 #也就是字元是謝、陳、官的都幫我選出來
+str_count(headline, "[謝陳官]")
+#也就是謝出現的次數加上陳出現的次數，再加上官出現的次數
+
+str_view_all(headline, "謝無雙|官求敗") # 有1個strip，出象有2個字組 
+str_count(headline, "謝無雙|官求敗")
+
+str_view_all(headline, "陳[^官]") # 固定字元＋有1個strip： 出象為非官的字元
+str_count(headline, "陳[^官]")
+```
+
+practice
+請使用str_extract函數粹取出每個地址的“xx號”包含“號”字。
+```{r}
+addresses <- c(
+  '臺中市后里區公館里尾社路385號',
+  '新竹市東區科學園路125號1樓'
+  )
+#觀察以上兩個地址都是三個數字一個號，總共四個字元
+strip1 <- strip2 <- strip3 <- "[0-9]"  #三條緞帶的物件都一樣可以一直指過去
+strip4 <- "號"
+myRegexSlotMachine <- paste0(strip1,strip2,strip3,strip4)
+print(myRegexSlotMachine)
+str_extract(addresses,myRegexSlotMachine)
+```
+
+
+4.6.3 複製次數Quantifiers:
+(..|..|...)或[...]只是一條reel strip, 前者是寬的（每個出象可以是多字元）後者是窄的（每個出象只是一個字元）。有時我們同樣的strip想連放很多條，可以在(..|..|...)或[...]後面加：
+
+{n}: 放n條strip，n是數字。
++: 放1條或以上（多少不限）。＋代表不知道有幾個strip(條)，所以用＋。
+{n,m}: 放n到m條strip，n及m都是數字。
+
+將以下地址的號數取出（含“號”字）
+```{r}
+addresses <- c(
+  '臺中市后里區公館里尾社路385號',
+  '新竹市東區科學園路125號1樓',
+  '新竹市北區竹光路99號',
+  '金門縣金城鎮賢庵里山前33號',
+  '臺中市南屯區工業區二十四路23號1樓')
+```
+
+```{r}
+myRegexSlotMachine <- "[0-9]+號" #不知道0到9的strip有幾條，所以後面接＋。
+print(myRegexSlotMachine)
+str_view_all(addresses,myRegexSlotMachine)
+str_extract(addresses,myRegexSlotMachine)
+
+str_view_all(addresses,"[0-9]+") # 樓號也會選到，符合這個數的條件都會被選到
+```
+
+以上是了解如何以regex形式的描述你的target的長相(可允許的長相是什麼)後，接下來我們進一步學習如何更準確描述target在整個字串的位置。
+
+
+4.6.4 頭尾定位 Anchors:
+在開頭：^target_regex  (有時候你知道你的target是在一整個字串的開頭，你就可以在你剛剛寫下的target_regex前面加上^，這樣他就只會去選出符合你描述且在字串開頭的規律)
+在結尾：target_regex$
+```{r}
+phrase <- c("唧唧复唧唧")
+```
+
+```{r}
+# 目標是前面的唧唧
+target_regex <- "唧唧"
+pattern <- glue::glue("^{target_regex}")
+print(pattern)
+str_view(phrase, pattern) 
+```
+glue套件裡的glue函數會把字串中的{物值名稱}換成目前Environment裡該物件的值。
+在上面{target_regex}會被換成“唧唧”。
+
+```{r}
+# 目標是後面的唧唧
+target_regex2 <- "唧唧"
+pattern <- glue::glue("{target_regex2}$")
+print(pattern)
+str_view(phrase, pattern) 
+```
+
+
+4.6.5 前後鄰居描述Look around (要的字句剛好在中間):
+*target後面是B：target_regex(?=B_regex)： target_pattern後面是年
+*target前面是A：(?<=A_regex)target_regex：target_pattern前面是民國
+*target前有A後有B：(?<=A_regex)target_regex(?=B_regex) 我要找的target，他的前面是鄰居A，後面是鄰居B
+
+Cheat sheet上還有更多字串處理情境。
+
+民國年月日存成date class：
+```{r}
+twDate <-  c("民國108年12月5日","民國98年10月5日")
+
+library(stringr)
+# 準備regex: 
+## 取出：「前有」民國，「後有」年的「數字」「們」
+## "(?<={A_regex}){target_regex}(?={B_regex})"
+
+target_regex <- "[0-9]+"
+A_regex <- "民國" #把前面的鄰居"民國"定義為A_regex
+B_regex <- "年" #把後面的鄰居"年"定義為B_regex
+#以上三行是先用regex去形容自己與我前後的兩個鄰居
+
+regex_pattern <- glue::glue(
+  "(?<={A_regex}){target_regex}(?={B_regex})"
+  )
+
+print(regex_pattern)
+
+## 如果同學已經很熟就可以直接寫
+regex_pattern <-
+  "(?<=民國)[0-9]+(?=年)"
+
+# 取出民國年，計算西元年
+#extract是萃取出的意思
+year <- 
+  str_extract(
+    twDate,
+    regex_pattern)
+westernYear <- as.integer(year)+1911
+
+# 替換民國xx年的xx成西元年數字
+#string裡面有replace可以把找到的目標做替換
+str_replace(
+  twDate,
+  regex_pattern,  # 要換掉的文字
+  as.character(westernYear) # 要替換的內容
+) -> twDate_reformat
+print(twDate_reformat)
+
+
+dateFinal <- lubridate::ymd(twDate_reformat) #lubrdate不管你是西元還是民國，只存取數字
+#此時dateFinal就會是date class了
+```
+
+practice
+康熙元年是西元1662年，請將“康熙23年5月6日”轉成date class。（假設月日已是西曆月日）
+```{r}
+KC <- "康熙23年5月6日"
+target_regex_KC <- "[0-9]+" 
+before_regex <- "康熙"
+after_regex <- "年"
+regex_pattern_KC <- glue::glue("(?<={before_regex}){target_regex_KC}(?={after_regex})")
+print(regex_pattern_KC)
+
+yearKC <- str_extract(KC,regex_pattern_KC)
+wesyear <- as.integer(yearKC)+1639
+
+KC_reformat <- str_replace(KC,regex_pattern_KC,as.character(wesyear))
+print(KC_reformat)
+
+KCdate <- lubridate::ymd(KC_reformat)
+KCdate
+```
+
+之前我們使用str_extract函數粹取出以下地址的“xx號”包含“號”字，如果不要取到「號」字只取出數字，你會怎麼做？
+```{r}
+addresses <- c(
+  '臺中市后里區公館里尾社路385號',
+  '新竹市東區科學園路125號1樓'
+  )
+str_extract(addresses,"[0-9]+(?=號)")
+```
+
+
+4.6.6 字元模版
+[:graph:] 包山包海，還包中文字元。
+[\u4E00-\u9FFF] 代表所有中or日or韓文字字元。
+```{r}
+str_extract_all(
+  "我的名字8293叫17380小abce明",
+  "[\u4E00-\u9FFF]+")
+```
+
+
+4.6.7 綜合練習
+學期初在輸入Github inclass-practice-repo網址時，它要長得像
+
+https://github.com/...../108-2-XX-inclass-practice
+
+其中XX只可以是56或78，以下是課程資訊表單學生填答的可能形式，請寫下正確格式的regex，並用str_detect判斷那幾個人沒有正確填寫：
+```{r}
+c(
+  "https://github.com/student1/108-2-78-inclass-practice", 
+  "github.com/student2 / 108-2-56-inclass-practice", 
+  "https://github.com/student3/108-2-56-inclass-practice",
+  "student4 / 108-2-56-inclass-practice",
+  "student5"
+) -> studentGithubURLs
+
+#answer
+Github_target_regex <- "^https://github.com/[:graph:]+/108-2-(56|78)-inclass-practice"
+str_detect(studentGithubURLs,Github_target_regex)
+```
+
+期中考檔案命名出現以下幾種寫法：
+```{r}
+midtermFilename <- 
+  c("exam1-410773888.rmd",
+    "exam1410882888.Rmd",
+    "410682999第一次期中考.Rmd",
+    "期中考310573888.R")
+```
+請「只」以str_extract完成以下任務：
+1. 取出9位數的學號(4或3開頭的數字)。
+2. 系號是學號的第5-6兩位數字, 如410773082的系號是73。
+3. 如果多了兩位99年入學但休學多年的學生(學號只有8位數49975013及49977012，系號是第4-5位數），他們的檔案名稱分別是“exam149975013.Rmd”,“499770121stExam.Rmd”,執行以下程序更新midterFilename:
+```{r}
+midtermFilename <- c(midtermFilename,"exam149975013.Rmd","499770121stExam.Rmd")
+```
+
+
+1. 取出9位數的學號(4或3開頭的數字)。
+```{r}
+str_extract(midtermFilename,"(4|3)[0-9]{8}")
+```
+
+2. 系號是學號的第5-6兩位數字, 如410773082的系號是73。
+```{r}
+before_regex_ID <- "5|6|7|8"
+after_regex_ID <- "888|999"
+target_regex_ID <- "[0-9]{2}"
+
+str_extract(midtermFilename,glue::glue("(?<={before_regex_ID}){target_regex_ID}(?={after_regex_ID})"))
+```
+
+3. 如果多了兩位99年入學但休學多年的學生(學號只有8位數49975013及49977012，系號是第4-5位數），他們的檔案名稱分別是“exam149975013.Rmd”,“499770121stExam.Rmd”,執行以下程序更新midterFilename:
+```{r}
+midtermFilename <- c(midtermFilename,"exam149975013.Rmd","499770121stExam.Rmd")
+str_extract(midtermFilename,"(4|3)[0-9]+")
+
+before_regex_1 <- "5|6|7|8|9"
+target_regex_1 <- "[0-9]{2}"
+after_regex_1 <- "888|999|013|121"
+str_extract(midtermFilename,glue::glue("(?<={before_regex_1}){target_regex_1}(?={after_regex_1})"))
+```
+
+
+```{r}
+#1.取出9位數的學號(4或3開頭的數字)。
+str_extract(midtermFilename,"(4|3)[0-9]{8}")
+
+#2.系號是學號的第5-6兩位數字, 如410773082的系號是73。
+before_regex_ID <- "5|6|7|8"
+after_regex_ID <- "888|999"
+target_regex_ID <- "[0-9]{2}"
+
+str_extract(midtermFilename,glue::glue("(?<={before_regex_ID}){target_regex_ID}(?={after_regex_ID})"))
+
+#3. 如果多了兩位99年入學但休學多年的學生(學號只有8位數49975013及49977012，系號是第4-5位數），他們的檔案名稱分別是“exam149975013.Rmd”,“499770121stExam.Rmd”,執行以下程序更新midterFilename:
+midtermFilename <- c(midtermFilename,"exam149975013.Rmd","499770121stExam.Rmd")
+str_extract(midtermFilename,"(4|3)[0-9]+")
+
+before_regex_1 <- "5|6|7|8|9"
+target_regex_1 <- "[0-9]{2}"
+after_regex_1 <- "888|999|013|121"
+str_extract(midtermFilename,glue::glue("(?<={before_regex_1}){target_regex_1}(?={after_regex_1})"))
+```
