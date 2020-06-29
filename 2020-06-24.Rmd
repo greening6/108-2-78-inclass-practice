@@ -26,3 +26,973 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+
+5.4 Iteration迴圈
+Rule of thumb: never copy and paste more than twice.
+
+重覆兩次（包含第一個）可以
+但在設計迴圈時可以copy/paste 3 times來理解body如何設計
+迴圈：一連串程序反覆執行時使用的
+找出哪幾筆為“男”：
+```{r}
+sampleData <- list(
+  list("男", 45), list("女", 32), list("男",50), list("男",33), list("女", 21)
+)
+```
+
+
+男女只在sampleData每一個元素底下的第一個元素
+```{r}
+# 前三筆性別
+sampleData[[1]][[1]]
+sampleData[[2]][[1]]
+sampleData[[3]][[1]]
+```
+
+若能取出每一筆的性別形成一個class charactor vector, 取名gender, 那就可以:
+```{r}
+pick_male <- (gender == "男")
+```
+
+💡 “對了map函數用來進行一一處理而且可以輸出成一個list, 而unlist可以適當把list變成atomic vector”
+```{r}
+map(sampleData,~.x[[1]]) %>%
+  unlist() -> gender
+
+pick_male <- (gender == "男")
+```
+若你確信你map的list輸出每個元素只有一個值，且大家都相同class，則你可以依class的類形使用：
+map_chr
+map_lgl
+map_dbl, map_int
+省了unlist那一步。
+```{r}
+map_chr(sampleData,~.x[[1]]) -> gender
+```
+
+ex:試試看能不能一map登天，一步就產生你要的pick_male。
+
+
+
+5.4.1 Iteration components
+我們在使用map時寫copy/paste程序3次，目的在確認：
+Sequence: 即[[1]], [[2]], [[3]]出現的位置。
+Body: 要重覆做的SOP，即~.x[[1]]。
+而map最後會把每次Body的執行結果存在：
+Output: 每次body執行完要存的形式，即map最後的list class output。
+**使用取出的三個符號都是function，所以可以用pipe將參數x提出
+
+5.4.2 Two types of sequence
+反覆要做的事
+```{r}
+sampleData[[1]][[1]]  
+sampleData[[2]][[1]] 
+sampleData[[3]][[1]] 
+```
+
+使用pipe寫法可以清楚分離sequence及body(SOP)。兩種sequence表示：
+```{r}
+library(magrittr)
+# 串接寫法(I): external dispatch：準備要運作的東西在工廠（大括號）以外準備好以後才丟到工廠裡組裝
+sampleData[[1]] %>% {.[[1]]} 
+sampleData[[2]] %>% {.[[1]]}
+sampleData[[3]] %>% {.[[1]]}
+
+map(sampleData, ~{.x[[1]]})
+
+# 串接寫法(II): internal dispatch：原料都一直在工廠（大括號）裡面，只有在被廣播時，物件原料的第一個元素就會站出來經過工廠裡的生產線
+1 %>% {sampleData[[.]][[1]]}  
+2 %>% {sampleData[[.]][[1]]}  
+3 %>% {sampleData[[.]][[1]]}
+
+map(1:5, ~{sampleData[[.]][[1]]}) #map在單維度遞迴時，.x也可以只寫.，但建議還是寫.
+```
+
+```{r}
+eggs <- rep("雞蛋x1", 8)
+
+fryEgg <- function(egg){
+  str_replace(egg, "雞蛋", "荷包蛋")
+}
+
+# external dispatch
+eggs[[1]] %>% fryEgg(.)
+eggs[[2]] %>% fryEgg(.)
+eggs[[3]] %>% fryEgg(.)
+#用map詮釋map(eggs,~fryEgg(.x))
+map(eggs, ~fryEgg(.x)) -> friedEggs1
+
+# internal dispatch
+1 %>% {fryEgg(eggs[[.]])} #記得加大括號
+2 %>% {fryEgg(eggs[[.]])}
+3 %>% {fryEgg(eggs[[.]])}
+#用map詮釋map(1:8,~{fryEgg(eggs[[.x]])})
+map(1:8,~{fryEgg(eggs[[.x]])}) -> friedEggs2
+```
+
+
+vectorized function
+function的input argument，我可以把一個向量不管長度丟進去，他都有辦法處理的話，此種函數就稱為vectorized function
+```{r}
+grade <- c(45, 74, NA)
+
+i<-3
+
+grade_i <- grade[[i]]
+if(!is.na(grade_i)){
+  if(grade_i >= 60){
+    "P"
+  } else if(grade_i < 60 ) {
+    "F"
+  }
+} else {
+  "缺考"
+}
+```
+
+```{r}
+pass_or_fail <- function(grade_i){
+  if(!is.na(grade_i)){
+    if(grade_i >= 60){
+      "P"
+    } else if(grade_i < 60 ) {
+      "F"
+    }
+  } else {
+    "缺考"
+  }
+}
+
+pass_or_fail(grade[[1]])
+pass_or_fail(grade[[2]])
+pass_or_fail(grade[[3]])
+
+# 可否直接input整個grade vector
+warning("不是vectorised function")
+pass_or_fail(grade)
+```
+
+
+函數使用時若出現output value assigned動作時（即pass_fail_i <-），相當於執行了函數body pass_fail_i <-{...}，依switch小節的{...}處理原則：
+
+若最後一個被執行的指令會產生print在螢幕的效果，則可以用{…}->或<-{…}將這print的值存出來。
+此時可以省略return()。
+
+可:
+use map to wrap around non-vectorized function
+產生vectorized function
+```{r}
+grade[[1]] %>% {pass_or_fail(.)}
+grade[[2]] %>% {pass_or_fail(.)}
+grade[[3]] %>% {pass_or_fail(.)}
+
+map(grade, ~{pass_or_fail(.)}) # map to list
+
+map_chr(grade, ~{pass_or_fail(.)}) # map to atom. vector of class character
+
+map_pass_fail <- function(grade){
+  map_chr(grade, ~{pass_or_fail(.)})
+}
+```
+
+```{r}
+map_pass_fail(grade)
+```
+
+若你確信你map的list輸出每個元素只有一個值，且大家都相同class，則你可以依class的類形使用：
+map_chr
+map_lgl
+map_dbl, map_int
+省了unlist那一步。
+
+請問map_pass_fail的定義是否受global environment裡的grade元素「值」影響？即執行rm(grade)刪除grade物件，以下程序執行上會不會有問題？
+```{r}
+rm(grade)
+map_pass_fail(c(77,43,68,NA))
+#實際上是可以被執行的，代表map_pass_fail的grade根本不是指global environment裡面的grade，他其實只是一個input argument
+```
+常被拿來針對物件元素進行一一計算的函數建議可以將它改成vectorized function，以後在維護時比較容易。
+
+
+Internal dispatching的優勢:
+當Body要同時對多個物件同時進行「元素一一處理」時，internal dispatch便顯得便利：
+```{r}
+eggs <- rep("雞蛋x1",10)
+ham <- rep("火腿x1", 10)
+toast <- rep("土司2片",10)
+
+toast_withEggHam <- function(toast=NULL, egg=NULL, ham=NULL){
+  if(is.null(toast) || !str_detect(toast, "土司")){stop("少了土司")}
+  if(is.null(egg) || !str_detect(egg, "蛋")){stop("少了蛋")}
+  if(is.null(ham) || !str_detect(ham, "火腿")){stop("少了火腿")}
+  "火腿蛋三明治"
+}
+
+toast_withEggHam(toast[[1]],eggs[[1]],ham[[1]])
+
+# 土司、火腿、蛋 第一份出列
+1 %>% {toast_withEggHam(toast=toast[[.]], egg=eggs[[.]], ham=ham[[.]])}
+# 土司、火腿、蛋 第二份出列
+2 %>% {toast_withEggHam(toast=toast[[.]], egg=eggs[[.]], ham=ham[[.]])}
+# 土司、火腿、蛋 第三份出列
+3 %>% {toast_withEggHam(toast=toast[[.]], egg=eggs[[.]], ham=ham[[.]])}
+
+map(1:10,~{toast_withEggHam(toast=toast[[.x]], egg=eggs[[.x]], ham=ham[[.x]])})
+map(1:10,
+    ~toast_withEggHam(toast=toast[[.x]], egg=eggs[[.x]], ham=ham[[.x]]))
+```
+
+
+各系課程規劃
+執行以下程序可以得到臺北大學100-107學年的開課資料courseStructure：
+```{r}
+jsonlite::fromJSON("https://www.dropbox.com/s/7myzzdnoor21hye/courseStructure2.json?dl=1") -> courseStructure
+```
+
+
+一位剛入學的經濟系新生想大致了解他系上對他未來四年的課程規劃是什麼？於是他想先看一下過去狀況。
+以100學年入學之經濟系學生為對象，找出這群學生大一到大四的系上課程規劃是什麼？
+
+Hard labour stage:
+```{r}
+entranceYear <- 100
+major <- "經濟系"
+allGrades <- paste0(major, 1:4)
+academicYears <- entranceYear+0:3
+
+# 100學年 1年級
+acadYear_i <- academicYears[[1]]
+grade_i <- allGrades[[1]]
+pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+unique(courseStructure$科目名稱[pick])
+#unique是預防有一個科目開超過一班
+
+# 101學年 2年級
+acadYear_i <- academicYears[[2]]
+grade_i <- allGrades[[2]]
+pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+unique(courseStructure$科目名稱[pick])
+
+# 102學年 3年級
+acadYear_i <- academicYears[[3]]
+grade_i <- allGrades[[3]]
+pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+unique(courseStructure$科目名稱[pick])
+
+# 103學年 4年級
+acadYear_i <- academicYears[[4]]
+grade_i <- allGrades[[4]]
+pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+unique(courseStructure$科目名稱[pick])
+```
+
+
+Observant stage:
+A.100學年1年級-103學年4年級，有哪幾行是一模一樣的？
+```{r}
+pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+unique(courseStructure$科目名稱[pick])
+```
+
+B.以上的SOP要能運作，哪些物件要存在執行環境？
+courseStructure, acadYear_i, grade_i
+
+
+
+
+Efficiency kick up stage:
+將(A)(B)形成函數
+```{r}
+#把SOP寫在body
+get_courses <- function(acadYear_i, grade_i, courseStructure){
+  pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+  
+  return(
+    unique(courseStructure$科目名稱[pick])
+  )
+}
+```
+
+
+重寫100學年1年級-103學年4年級
+```{r}
+# 100學年 1年級
+acadYear_i <- academicYears[[1]]
+grade_i <- allGrades[[1]]
+get_courses(acadYear_i, grade_i, courseStructure)
+
+# 101學年 2年級
+acadYear_i <- academicYears[[2]]
+grade_i <- allGrades[[2]]
+get_courses(acadYear_i, grade_i, courseStructure)
+
+# 102學年 3年級
+acadYear_i <- academicYears[[3]]
+grade_i <- allGrades[[3]]
+get_courses(acadYear_i, grade_i, courseStructure)
+
+# 103學年 4年級
+acadYear_i <- academicYears[[4]]
+grade_i <- allGrades[[4]]
+get_courses(acadYear_i, grade_i, courseStructure)
+```
+
+
+Efficiency squeezing stage:
+濃縮
+```{r}
+# 100學年 1年級
+get_courses(academicYears[[1]], allGrades[[1]], courseStructure)
+
+# 101學年 2年級
+get_courses(academicYears[[2]], allGrades[[2]], courseStructure)
+
+# 102學年 3年級
+get_courses(academicYears[[3]], allGrades[[3]], courseStructure)
+
+# 103學年 4年級
+get_courses(academicYears[[4]], allGrades[[4]], courseStructure)
+```
+
+使用pipe
+```{r}
+1 %>% 
+  {get_courses(academicYears[[.]], allGrades[[.]], courseStructure)}
+2 %>% 
+  {get_courses(academicYears[[.]], allGrades[[.]], courseStructure)}
+3 %>% 
+  {get_courses(academicYears[[.]], allGrades[[.]], courseStructure)}
+4 %>% 
+  {get_courses(academicYears[[.]], allGrades[[.]], courseStructure)}
+```
+
+使用map
+```{r}
+1:4 %>%
+  map(~{get_courses(academicYears[[.]], allGrades[[.]], courseStructure)})
+```
+
+
+
+
+5.4.3 for loop
+```{r}
+output <- vector("{type}", length={len})
+for(.x in {sequence}){
+  {body}
+}
+#迴圈基本上都會有sequence和body及怎麼儲存的output的部分
+```
+map和for的差別：
+map(sequence,body)，map的output永遠會是一個list，map會盡量把body濃縮為一個很簡短的formula，當body很難簡化時，使用for迴圈較佳
+
+這裡"{…}" 均是需要視情況定義的部份。
+
+vector(mode, length):
+mode: character class，代表container所要用來裝的值之type。
+length: integer class，代表container要有幾個空位。長度是一個數字
+
+
+map範例：
+map iteration：(請先跑前置作業)
+```{r}
+### 前置作業
+entranceYear <- 100
+major <- "經濟系"
+allGrades <- paste0(major, 1:4)
+academicYears <- entranceYear+0:3
+
+jsonlite::fromJSON("https://www.dropbox.com/s/7myzzdnoor21hye/courseStructure2.json?dl=1") -> courseStructure
+
+get_courses <- function(acadYear_i, grade_i, courseStructure){
+  pick <-
+  (courseStructure$學年==acadYear_i 
+    &
+    str_detect(courseStructure$應修系級, grade_i))
+  
+  return(
+    unique(courseStructure$科目名稱[pick])
+  )
+}
+```
+
+```{r}
+# 前置作業，接map iteration
+map(1:4, 
+    ~{
+      get_courses(academicYears[[.x]], 
+              allGrades[[.x]], 
+              courseStructure)})
+
+#這裏1:4是sequence，
+```
+
+for iteration：（請先跑前置作業）
+```{r}
+# 前置作業，接for iteration，for迴圈：
+output <- vector("list", length=4)
+for(.x in 1:4){
+  get_courses(academicYears[[.x]], 
+                allGrades[[.x]], 
+                courseStructure) -> output[[.x]]
+}
+```
+若internal dispatching sequence的長度是對應到某個物件元素個數，如上面1:4是對應academicYears（亦對應allGrades），則1:4可用seq_along(academiYears)取代。
+
+
+
+火腿蛋三明治:
+```{r}
+eggs <- rep("雞蛋x1",10)
+ham <- rep("火腿x1", 10)
+toast <- rep("土司2片",10)
+
+toast_withEggHam <- function(toast=NULL, egg=NULL, ham=NULL){
+  if(is.null(toast) || !str_detect(toast, "土司")){stop("少了土司")}
+  if(is.null(egg) || !str_detect(egg, "蛋")){stop("少了蛋")}
+  if(is.null(ham) || !str_detect(ham, "火腿")){stop("少了火腿")}
+  "火腿蛋三明治"
+}
+```
+
+map approach:
+```{r}
+map(1:10,
+    ~{toast_withEggHam(toast=toast[[.x]], egg=eggs[[.x]], ham=ham[[.x]])})
+```
+
+for approach:
+```{r}
+output <- vector("character", 10)
+for(.x in 1:10){
+  toast_withEggHam(toast=toast[[.x]], egg=eggs[[.x]], ham=ham[[.x]]) -> output[[.x]]
+} #要有一個回存output的動作，因為for迴圈需要自己準備一個output container
+output
+```
+
+累計型output:
+Summation：
+```{r}
+a <- sample(1:100, 10, replace=T)
+print(a)
+```
+
+Sequence: 1:10
+body: 到目前sequence .x前已經加總的值+ a[[.x]]
+output: .x到10最後算完的值。
+
+```{r}
+sum <- 0
+sum <- sum+a[[1]]
+sum <- sum+a[[2]]
+sum <- sum+a[[3]]
+sum <- sum+a[[4]]
+sum <- sum+a[[5]]
+sum <- sum+a[[6]]
+sum <- sum+a[[7]]
+sum <- sum+a[[8]]
+sum <- sum+a[[9]]
+sum <- sum+a[[10]]
+sum
+```
+如果要寫成for迴圈就要寫成串接寫法
+```{r}
+1 %>% {sum <- sum+a[[.]]}
+2 %>% {sum <- sum+a[[.]]}
+3 %>% {sum <- sum+a[[.]]}
+4 %>% {sum <- sum+a[[.]]}
+5 %>% {sum <- sum+a[[.]]}
+6 %>% {sum <- sum+a[[.]]}
+7 %>% {sum <- sum+a[[.]]}
+8 %>% {sum <- sum+a[[.]]}
+9 %>% {sum <- sum+a[[.]]}
+10 %>% {sum <- sum+a[[.]]}
+```
+
+寫成for迴圈
+```{r}
+sum <- 0
+for (.x in 1:10) {
+  sum <- sum+a[[.x]]
+}
+
+sum
+```
+
+
+
+```{r}
+sum <- 0
+for(.x in 1:10){
+  sum <- sum+a[[.x]]
+}
+
+print(sum)
+```
+
+
+
+長度不定型output:
+每次抽一個介於0到100的數字（抽出放回）抽10次，但每次必需是3的倍數才留下來。
+```{r}
+output <- c()
+
+#.x=1抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+
+#.x=2抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+
+#.x=3抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+
+#.x=4抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+
+#.x=5抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+```
+寫成串接
+```{r}
+1 %>% {#.x=1抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}}
+
+2 %>% {#.x=2抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}}
+
+3 %>% {#.x=3抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}}
+
+4 %>% {#.x=4抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}}
+
+5 %>% {#.x=5抽第一個數
+new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}}
+```
+
+寫成for迴圈
+```{r}
+output <- c() #從空相量開始
+for (.x in 1:10) {
+  new <- sample(0:100,1)
+if(new %% 3 == 0){
+  output <- c(output,new)
+}
+}
+
+print(output)
+```
+
+next:
+有時.x對應元素要附合某些條件才要進行body裡某些處理，不然可「跳過」。
+```{r}
+list(
+  list("student A", c(2,3,4,5)),
+  list("student B", NA), # 沒交作業
+  list("student C", factor(c(2,3,4,5))),
+  list("student D", factor(c(2,3,5)))
+) -> collectionHWs
+
+correctAns <- factor(c(2,3,4,5))
+
+output <- vector("integer",length(collectionHWs))
+nameVector <- vector("character", length(collectionHWs))
+for(.x in seq_along(collectionHWs)){
+  nameVector[[.x]] <- collectionHWs[[.x]][[1]]
+  studentAns <- collectionHWs[[.x]][[2]] 
+  if(is.na(studentAns)){
+    output[[.x]] <- 0
+    next
+  } 
+  
+  # 改題部份
+  if(identical(studentAns, correctAns)){
+    output[[.x]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.x]] <- 5
+  } else {
+    output[[.x]] <- 0
+  }
+}
+names(output) <- nameVector
+
+print(output)
+```
+
+```{r}
+#第一個學生
+nameVector[[1]] <- collectionHWs[[1]][[1]]
+studentAns <- collectionHWs[[1]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[1]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[1]] <- 5
+  } else {
+    output[[1]] <- 0
+  }
+
+#第二個學生
+nameVector[[2]] <- collectionHWs[[2]][[1]]
+studentAns <- collectionHWs[[2]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[2]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[2]] <- 5
+  } else {
+    output[[2]] <- 0
+  }
+
+#第三個學生
+nameVector[[3]] <- collectionHWs[[3]][[1]]
+studentAns <- collectionHWs[[3]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[3]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[3]] <- 5
+  } else {
+    output[[3]] <- 0
+  }
+
+#第四個學生
+nameVector[[4]] <- collectionHWs[[4]][[1]]
+studentAns <- collectionHWs[[4]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[4]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[4]] <- 5
+  } else {
+    output[[4]] <- 0
+  }
+
+output
+```
+
+變成串接形式
+```{r}
+1 %>% {#第一個學生
+nameVector[[.]] <- collectionHWs[[.]][[1]]
+studentAns <- collectionHWs[[.]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[.]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.]] <- 5
+  } else {
+    output[[.]] <- 0
+  }}
+
+
+2 %>% {#第二個學生
+nameVector[[.]] <- collectionHWs[[.]][[1]]
+studentAns <- collectionHWs[[.]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[.]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.]] <- 5
+  } else {
+    output[[.]] <- 0
+  }}
+
+3 %>% {#第三個學生
+nameVector[[.]] <- collectionHWs[[.]][[1]]
+studentAns <- collectionHWs[[.]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[.]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.]] <- 5
+  } else {
+    output[[.]] <- 0
+  }}
+
+4 %>% {#第四個學生
+nameVector[[.]] <- collectionHWs[[.]][[1]]
+studentAns <- collectionHWs[[.]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[.]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.]] <- 5
+  } else {
+    output[[.]] <- 0
+  }}
+
+output
+```
+
+寫成for迴圈
+```{r}
+for (.x in 1:4) {
+  nameVector[[.x]] <- collectionHWs[[.x]][[1]]
+studentAns <- collectionHWs[[.x]][[2]]
+#改題
+if(identical(studentAns, correctAns)){
+    output[[.x]] <- 10
+  } else if (class(studentAns)!=class(correctAns) && identical(as.character(studentAns),as.character(correctAns))) {
+    output[[.x]] <- 5
+  } else {
+    output[[.x]] <- 0
+  }}
+
+```
+
+若沒有交作業，直接改零分，不用進入改題程式
+```{r}
+if(is.na(studentAns)){
+  output[[.x]] <- 0
+  next()
+}
+```
+
+ex:
+將body的改題部份另外寫成grade(studentAns, correctAns)函數，讓它改完後回傳分數值，並重寫上面迴圈使用你的grade函數。
+
+
+5.4.4 while loop
+有時我們面臨sequence長度未知，如擲一銅板直到出現5次正面才停。
+```{r}
+sum <- 0 #得到幾個正面
+count <- 0 #計擲了幾次
+
+#1st toss
+count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+}
+
+#2st toss
+count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+}
+
+
+```
+
+變成串接
+```{r}
+#1st toss
+1 %>% {count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+}}
+
+#2st toss
+2 %>% {count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+}}
+
+#sequence不知道多久才會停下來
+```
+
+
+
+```{r}
+sum <- 0
+for(i in 1:10){
+  newToss <- sample(c("正","反"), 1, replace=T)
+  if(newToss == "正"){
+    sum <- sum+1
+  }
+  print(glue::glue("已擲{i}次得到{sum}次正面"))
+}
+```
+
+for loop用很長的sequence再加上條件式break：
+```{r}
+sum <- 0
+count <- 0
+for(i in 1:100){
+  count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+  }
+  print(glue::glue("已擲{i}次得到{sum}次正面"))
+  if(sum==5){
+    break
+  }
+}
+```
+break會完全終止迴圈，而之前學到的next是不執行其以下的body直接跳下一個sequence值。
+for的break是跳出迴圈的條件，while是留在迴圈的條件
+while會一直反覆執行body直到conditionCondition為FALSE:
+```{r}
+while(continueCondition){
+  body
+}
+```
+
+```{r}
+sum <- 0
+count <- 0
+while(sum!=5){
+   count <- count+1 #計數器+1
+newToss <- sample(c("正","反"),1,replace = T)
+if(newToss=="正"){
+  sum <- sum+1
+  }
+}
+```
+
+
+
+```{r}
+sum <- 0
+count <- 0 # 計數器
+while(sum<5){
+  count <- count+1 # 計數器+1
+  newToss <- sample(c("正","反"), 1, replace=T)
+  if(newToss == "正"){
+    sum <- sum+1
+  }
+  print(glue::glue("已擲{count}次得到{sum}次正面"))
+}
+```
+由於while並沒有迴圈執行次數上限，若沒設好結束條件程式會一直跑下去鎖死電腦。為避免此問題，一般我們會放計數器，並在條件裡放計數上限，如下方四個#註明位置：
+```{r}
+count <- 0 # 計數器開始值
+max_count <- 500 # 計數上限
+while(continueCondition && count <= max_count){ # 增加計數上限條件
+  count <- count+1 # 計數器加1
+  body
+}
+```
+
+
+之前的（有限）迴圈也可以用while寫：
+```{r}
+set.seed(1000) # 控制sample抽出的數字sequence固定，通常進行方法比對用
+
+output <- c()
+for(.x in 1:10){
+  new <- sample(0:100,1)
+  if(new %% 3==0){
+    output <- c(output, new)
+  }
+}
+
+print(output)
+```
+
+```{r}
+set.seed(1000) # 控制sample抽出的數字sequence固定，通常進行方法比對用
+
+count <- 0 # 計數器起始值
+output <- c()
+while(count <= 10){ # 計數上限條件
+  count <- count+1 # 計數器+1
+  new <- sample(0:100,1)
+  if(new %% 3==0){
+    output <- c(output, new)
+  }
+}
+
+print(output)
+```
+
+```{r}
+a <- sample(1:100, 10, replace=T)
+print(a)
+
+sum <- 0
+for(.x in 1:10){ 
+  sum <- sum+a[[.x]]
+}
+
+print(sum)
+```
+
+```{r}
+count <- 0 # 計數器起始值
+sum <- 0
+while(count <= 10){ # 計數上限條件
+  count <- count+1 # 計數器+1
+  sum <- sum+a[[count]]
+}
+
+print(sum)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
